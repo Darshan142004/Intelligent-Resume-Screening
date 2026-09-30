@@ -20,6 +20,10 @@ class Candidate(Base):
     phone = Column(String(50), nullable=True)
     education = Column(Text, nullable=True)
     experience = Column(Text, nullable=True)
+    projects = Column(Text, nullable=True)
+    certifications = Column(Text, nullable=True)
+    languages = Column(Text, nullable=True)
+    raw_text = Column(Text, nullable=True)
     resume_path = Column(String(255), nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
