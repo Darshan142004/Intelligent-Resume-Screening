@@ -1,69 +1,157 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { UserCheck, Upload, User, Sparkles, AlertCircle } from 'lucide-react';
+import { Upload, User, Briefcase, Sliders, CheckCircle2, ArrowRight } from 'lucide-react';
+import { api } from '../../services/api';
 
 export const CandidateDashboard: React.FC = () => {
+  const [candidateCount, setCandidateCount] = useState<number>(0);
+  const [jobCount, setJobCount] = useState<number>(0);
+  const [latestCandidate, setLatestCandidate] = useState<any | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    Promise.all([
+      api.get('/candidates').catch(() => ({ data: [] })),
+      api.get('/jobs').catch(() => ({ data: [] }))
+    ])
+      .then(([candsRes, jobsRes]) => {
+        const list = candsRes.data || [];
+        setCandidateCount(list.length);
+        if (list.length > 0) {
+          setLatestCandidate(list[list.length - 1]);
+        }
+        setJobCount((jobsRes.data || []).length);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-lg font-bold text-slate-900">Candidate Dashboard</h2>
-        <p className="text-xs text-slate-500">
-          Upload your resume to receive AI-powered job recommendations and skill gap analysis.
+      <div className="border-b border-line pb-3">
+        <h2 className="text-base font-bold text-text-main">Candidate Dashboard</h2>
+        <p className="text-xs text-text-muted mt-0.5">
+          Ingest your resume to inspect extracted credentials and diagnose skill alignment against open job requisitions
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-slate-500 font-semibold uppercase">Profile Status</span>
-            <User className="w-4 h-4 text-emerald-600" />
+      {/* Metric Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {/* Profile Status */}
+        <div className="bg-surface border border-line rounded-lg p-4">
+          <div className="flex items-center justify-between text-text-muted">
+            <span className="text-[11px] font-semibold uppercase tracking-wider">Candidate Profile</span>
+            <span className="w-7 h-7 rounded bg-accent-light text-accent flex items-center justify-center">
+              <User className="w-3.5 h-3.5" />
+            </span>
           </div>
-          <p className="text-lg font-bold text-slate-900 mt-2">Not Uploaded</p>
-          <p className="text-xs text-slate-500 mt-1">Upload resume to create profile</p>
+          <div className="text-base font-bold text-text-main mt-2">
+            {loading ? (
+              <span className="text-text-muted text-xs">Loading...</span>
+            ) : candidateCount > 0 ? (
+              <span className="text-status-success flex items-center gap-1.5 text-sm">
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+                Active ({candidateCount} Ingested)
+              </span>
+            ) : (
+              <span className="text-text-muted text-sm font-medium">No Resume Ingested</span>
+            )}
+          </div>
+          <p className="text-[11px] text-text-muted mt-1 truncate">
+            {latestCandidate
+              ? `Active: ${latestCandidate.name || 'Candidate #' + latestCandidate.id}`
+              : 'Upload a resume to initialize profile'}
+          </p>
         </div>
 
-        <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-slate-500 font-semibold uppercase">Recommended Jobs</span>
-            <Sparkles className="w-4 h-4 text-emerald-600" />
+        {/* Available Roles */}
+        <div className="bg-surface border border-line rounded-lg p-4">
+          <div className="flex items-center justify-between text-text-muted">
+            <span className="text-[11px] font-semibold uppercase tracking-wider">Available Roles</span>
+            <span className="w-7 h-7 rounded bg-accent-light text-accent flex items-center justify-center">
+              <Briefcase className="w-3.5 h-3.5" />
+            </span>
           </div>
-          <p className="text-lg font-bold text-slate-900 mt-2">0</p>
-          <p className="text-xs text-slate-500 mt-1">Matched open roles</p>
+          <p className="text-2xl font-bold text-text-main mt-2">
+            {loading ? '—' : jobCount}
+          </p>
+          <p className="text-[11px] text-text-muted mt-0.5">Active requisitions available for comparison</p>
         </div>
 
-        <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-slate-500 font-semibold uppercase">Skill Insights</span>
-            <AlertCircle className="w-4 h-4 text-emerald-600" />
+        {/* Diagnostic Status */}
+        <div className="bg-surface border border-line rounded-lg p-4">
+          <div className="flex items-center justify-between text-text-muted">
+            <span className="text-[11px] font-semibold uppercase tracking-wider">Diagnostic Analysis</span>
+            <span className="w-7 h-7 rounded bg-accent-light text-accent flex items-center justify-center">
+              <Sliders className="w-3.5 h-3.5" />
+            </span>
           </div>
-          <p className="text-lg font-bold text-slate-900 mt-2">Pending</p>
-          <p className="text-xs text-slate-500 mt-1">Gap analysis ready after upload</p>
+          <p className="text-sm font-bold text-text-main mt-2">
+            {candidateCount > 0 && jobCount > 0 ? (
+              <span className="text-accent">Ready to Compare</span>
+            ) : (
+              <span className="text-text-muted font-normal">Pending Ingestion</span>
+            )}
+          </p>
+          <p className="text-[11px] text-text-muted mt-0.5">
+            {candidateCount > 0 && jobCount > 0
+              ? 'Evaluate fit & missing requirements'
+              : 'Upload resume to evaluate job fit'}
+          </p>
         </div>
       </div>
 
-      <div className="border border-slate-200 rounded-lg p-6 bg-slate-50">
-        <h3 className="text-sm font-bold text-slate-900 mb-2">Candidate Quick Actions</h3>
+      {/* Quick Actions */}
+      <div className="border border-line rounded-lg p-5 bg-surface">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-text-muted mb-3">
+          Candidate Actions
+        </h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <Link
             to="/candidate/upload"
-            className="flex items-center gap-2 p-3 bg-white border border-slate-200 rounded-md text-sm font-semibold text-slate-800 hover:border-emerald-500 transition"
+            className="flex items-center justify-between p-3.5 bg-app border border-line rounded-md hover:border-line-strong hover:bg-white transition group"
           >
-            <Upload className="w-4 h-4 text-emerald-600" />
-            <span>Upload Resume</span>
+            <div className="flex items-center gap-2.5">
+              <span className="w-7 h-7 rounded bg-accent-light text-accent flex items-center justify-center">
+                <Upload className="w-4 h-4" />
+              </span>
+              <div>
+                <p className="text-xs font-bold text-text-main">Upload Resume</p>
+                <p className="text-[11px] text-text-muted">Parse PDF or Word document</p>
+              </div>
+            </div>
+            <ArrowRight className="w-3.5 h-3.5 text-text-muted group-hover:text-accent transition" />
           </Link>
+
           <Link
-            to="/candidate/recommendations"
-            className="flex items-center gap-2 p-3 bg-white border border-slate-200 rounded-md text-sm font-semibold text-slate-800 hover:border-emerald-500 transition"
+            to="/candidate/profile"
+            className="flex items-center justify-between p-3.5 bg-app border border-line rounded-md hover:border-line-strong hover:bg-white transition group"
           >
-            <Sparkles className="w-4 h-4 text-emerald-600" />
-            <span>View Job Recommendations</span>
+            <div className="flex items-center gap-2.5">
+              <span className="w-7 h-7 rounded bg-accent-light text-accent flex items-center justify-center">
+                <User className="w-4 h-4" />
+              </span>
+              <div>
+                <p className="text-xs font-bold text-text-main">My Profile</p>
+                <p className="text-[11px] text-text-muted">Review extracted skills &amp; experience</p>
+              </div>
+            </div>
+            <ArrowRight className="w-3.5 h-3.5 text-text-muted group-hover:text-accent transition" />
           </Link>
+
           <Link
             to="/candidate/skill-gap"
-            className="flex items-center gap-2 p-3 bg-white border border-slate-200 rounded-md text-sm font-semibold text-slate-800 hover:border-emerald-500 transition"
+            className="flex items-center justify-between p-3.5 bg-app border border-line rounded-md hover:border-line-strong hover:bg-white transition group"
           >
-            <AlertCircle className="w-4 h-4 text-emerald-600" />
-            <span>Skill Gap Analysis</span>
+            <div className="flex items-center gap-2.5">
+              <span className="w-7 h-7 rounded bg-accent-light text-accent flex items-center justify-center">
+                <Sliders className="w-4 h-4" />
+              </span>
+              <div>
+                <p className="text-xs font-bold text-text-main">Skill Gap Analysis</p>
+                <p className="text-[11px] text-text-muted">Compare against job requirements</p>
+              </div>
+            </div>
+            <ArrowRight className="w-3.5 h-3.5 text-text-muted group-hover:text-accent transition" />
           </Link>
         </div>
       </div>

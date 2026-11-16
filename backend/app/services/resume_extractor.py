@@ -41,10 +41,23 @@ SECTION_PATTERNS = {
 }
 
 
+def normalize_email(email: Optional[str]) -> Optional[str]:
+    """
+    Normalizes an email address by trimming whitespace and converting to lowercase.
+    Returns None if the input is None, empty, or whitespace.
+    """
+    if not email or not isinstance(email, str):
+        return None
+    cleaned = email.strip().lower()
+    return cleaned if cleaned else None
+
+
 def extract_email(text: str) -> Optional[str]:
-    """Extract email address using regex pattern."""
+    """Extract email address using regex pattern with case normalization."""
+    if not text or not isinstance(text, str):
+        return None
     match = EMAIL_REGEX.search(text)
-    return match.group(0).strip() if match else None
+    return normalize_email(match.group(0)) if match else None
 
 
 def extract_phone(text: str) -> Optional[str]:

@@ -7,13 +7,12 @@ from app.routes import (
     resumes_router,
     candidates_router,
     ranking_router,
-    recommendations_router,
     analysis_router
 )
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
-    description="FastAPI Backend for Intelligent Resume Screening and Job Recommendation System Using NLP",
+    description="FastAPI Backend for Intelligent Resume Screening and Job Matching System Using NLP",
     version="1.0.0",
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
     docs_url=f"{settings.API_V1_STR}/docs"
@@ -34,14 +33,13 @@ app.include_router(jobs_router, prefix=settings.API_V1_STR)
 app.include_router(resumes_router, prefix=settings.API_V1_STR)
 app.include_router(candidates_router, prefix=settings.API_V1_STR)
 app.include_router(ranking_router, prefix=settings.API_V1_STR)
-app.include_router(recommendations_router, prefix=settings.API_V1_STR)
 app.include_router(analysis_router, prefix=settings.API_V1_STR)
 
 
 @app.get("/")
 def root():
     return {
-        "message": "Welcome to Intelligent Resume Screening and Job Recommendation System API",
+        "message": "Welcome to Intelligent Resume Screening and Job Matching System Using NLP API",
         "docs": f"{settings.API_V1_STR}/docs",
         "health": f"{settings.API_V1_STR}/health"
     }

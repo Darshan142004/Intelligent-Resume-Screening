@@ -27,6 +27,7 @@ class CandidateResponse(CandidateBase):
     resume_path: Optional[str] = None
     created_at: datetime
     skills: List[SkillResponse] = []
+    duplicate_count: Optional[int] = 1
 
     class Config:
         from_attributes = True
@@ -46,6 +47,7 @@ class CandidateExtractionResponse(BaseModel):
     skills: List[str] = []
     created_at: datetime
     extraction_status: str = "success"
+    is_updated: bool = False
 
     class Config:
         from_attributes = True

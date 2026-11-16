@@ -39,6 +39,8 @@ dist-ssr/
 # Database / Storage
 *.sqlite
 *.db
+*.dump
+*.sql
 uploads/
 
 # IDE / OS

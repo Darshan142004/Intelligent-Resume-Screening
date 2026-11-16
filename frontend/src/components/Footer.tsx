@@ -2,14 +2,18 @@ import React from 'react';
 
 export const Footer: React.FC = () => {
   return (
-    <footer className="bg-slate-900 border-t border-slate-800 text-slate-400 py-6 mt-auto">
-      <div className="max-w-7xl mx-auto px-4 text-center text-sm">
-        <p className="font-medium text-slate-300">
-          Intelligent Resume Screening and Job Recommendation System Using NLP
-        </p>
-        <p className="text-xs text-slate-500 mt-1">
-          MCA Minor Project &copy; {new Date().getFullYear()} — Built with FastAPI, PostgreSQL, React, TypeScript & Docker
-        </p>
+    <footer className="border-t border-line bg-surface py-5 mt-auto text-text-muted">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs">
+        <div>
+          <span className="font-semibold text-text-main">
+            Intelligent Resume Screening and Job Matching System
+          </span>
+          <span className="mx-2 text-line-strong hidden sm:inline">|</span>
+          <span className="text-text-muted">MCA Minor Project</span>
+        </div>
+        <div className="text-[11px] text-text-muted">
+          Python FastAPI · PostgreSQL · React TypeScript · Pure NLP
+        </div>
       </div>
     </footer>
   );

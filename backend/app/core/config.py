@@ -3,7 +3,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    PROJECT_NAME: str = "Intelligent Resume Screening and Job Recommendation System"
+    PROJECT_NAME: str = "Intelligent Resume Screening and Job Matching System Using NLP"
     API_V1_STR: str = "/api/v1"
     
     POSTGRES_USER: str = os.getenv("POSTGRES_USER", "postgres")

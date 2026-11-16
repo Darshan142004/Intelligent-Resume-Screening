@@ -27,7 +27,7 @@ import { SkillGapAnalysis } from './pages/candidate/SkillGapAnalysis';
 export const App: React.FC = () => {
   return (
     <Router>
-      <div className="flex flex-col min-h-screen bg-slate-50 text-slate-900">
+      <div className="flex flex-col min-h-screen bg-app text-text-main font-sans">
         <Navbar />
 
         <main className="flex-grow">

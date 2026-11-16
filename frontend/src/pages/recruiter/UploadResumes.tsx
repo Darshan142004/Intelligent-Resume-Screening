@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../services/api';
-import { Upload, FileText, CheckCircle2, AlertCircle, User, Code, BookOpen, Briefcase } from 'lucide-react';
+import { Upload, FileText, CheckCircle2, AlertCircle, User, Code, BookOpen, Briefcase, FileUp } from 'lucide-react';
 
 interface Job {
   id: number;
@@ -44,7 +44,8 @@ export const UploadResumes: React.FC = () => {
   const [uploadMode, setUploadMode] = useState<'single' | 'bulk'>('bulk');
   const [files, setFiles] = useState<FileList | null>(null);
   const [uploading, setUploading] = useState<boolean>(false);
-  
+  const [updateExisting, setUpdateExisting] = useState<boolean>(false);
+
   const [singleResult, setSingleResult] = useState<ExtractedCandidate | null>(null);
   const [bulkResult, setBulkResult] = useState<BulkSummary | null>(null);
   const [errorMsg, setErrorMsg] = useState<string>('');
@@ -52,8 +53,8 @@ export const UploadResumes: React.FC = () => {
   useEffect(() => {
     api.get('/jobs')
       .then((res) => {
-        setJobs(res.data);
-        if (res.data.length > 0) setSelectedJob(res.data[0].id.toString());
+        setJobs(res.data || []);
+        if (res.data?.length > 0) setSelectedJob(res.data[0].id.toString());
       })
       .catch((err) => console.error(err));
   }, []);
@@ -78,6 +79,7 @@ export const UploadResumes: React.FC = () => {
 
     try {
       const formData = new FormData();
+      formData.append('update_existing', updateExisting.toString());
 
       if (uploadMode === 'single') {
         formData.append('file', files[0]);
@@ -106,125 +108,162 @@ export const UploadResumes: React.FC = () => {
   };
 
   return (
-    <div className="max-w-4xl space-y-6">
-      <div>
-        <h2 className="text-lg font-bold text-slate-900">Upload & Ingest Resumes</h2>
-        <p className="text-xs text-slate-500">
-          Support for PDF (.pdf) and Word (.docx). Automatic structured information & skill extraction.
+    <div className="max-w-4xl space-y-5">
+      {/* Page Title */}
+      <div className="border-b border-line pb-3">
+        <h2 className="text-base font-bold text-text-main">Upload &amp; Screen Resumes</h2>
+        <p className="text-xs text-text-muted mt-0.5">
+          Process single or batch resumes in PDF (.pdf) and Word (.docx) formats with deterministic information extraction
         </p>
       </div>
 
       {errorMsg && (
-        <div className="p-3 bg-rose-50 text-rose-800 border border-rose-200 rounded text-xs font-semibold flex items-center gap-2">
-          <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+        <div className="p-3 bg-status-danger-bg text-status-danger border border-status-danger-border rounded-md text-xs font-medium flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 shrink-0" />
           <span>{errorMsg}</span>
         </div>
       )}
 
       <form onSubmit={handleUpload} className="space-y-4">
-        <div className="bg-slate-50 p-4 border border-slate-200 rounded-lg space-y-4">
+        <div className="bg-app p-4 border border-line rounded-lg space-y-4">
+          {/* Target Job Selector */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Target Job Description</label>
+            <label className="block text-xs font-semibold text-text-main mb-1">
+              Target Job Requisition
+            </label>
             <select
               value={selectedJob}
               onChange={(e) => setSelectedJob(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-300 rounded-md text-xs bg-white focus:ring-1 focus:ring-blue-500 outline-none"
+              className="w-full px-3 py-2 border border-line rounded-md text-xs text-text-main bg-white focus:border-accent focus:ring-1 focus:ring-accent outline-none transition"
             >
-              <option value="">-- Unassigned / General Pool --</option>
+              <option value="">— Unassigned / General Candidate Pool —</option>
               {jobs.map((job) => (
                 <option key={job.id} value={job.id}>
-                  {job.title} ({job.company})
+                  {job.title} · {job.company}
                 </option>
               ))}
             </select>
           </div>
 
+          {/* Mode Selector */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-2">Upload Mode</label>
+            <label className="block text-xs font-semibold text-text-main mb-1.5">Processing Mode</label>
             <div className="flex gap-4">
-              <label className="flex items-center gap-2 text-xs text-slate-800 font-medium cursor-pointer">
+              <label className="flex items-center gap-2 text-xs text-text-main cursor-pointer select-none">
                 <input
                   type="radio"
                   name="uploadMode"
                   value="bulk"
                   checked={uploadMode === 'bulk'}
                   onChange={() => setUploadMode('bulk')}
-                  className="text-blue-600 focus:ring-blue-500"
+                  className="text-accent focus:ring-accent"
                 />
-                Bulk Upload (Multiple PDF/DOCX)
+                <span>Bulk Upload (Multiple PDF / DOCX)</span>
               </label>
-              <label className="flex items-center gap-2 text-xs text-slate-800 font-medium cursor-pointer">
+              <label className="flex items-center gap-2 text-xs text-text-main cursor-pointer select-none">
                 <input
                   type="radio"
                   name="uploadMode"
                   value="single"
                   checked={uploadMode === 'single'}
                   onChange={() => setUploadMode('single')}
-                  className="text-blue-600 focus:ring-blue-500"
+                  className="text-accent focus:ring-accent"
                 />
-                Single Resume Upload
+                <span>Single Resume File</span>
               </label>
             </div>
           </div>
 
-          <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 bg-white text-center">
-            <Upload className="w-8 h-8 text-blue-600 mx-auto mb-2" />
-            <p className="text-xs font-semibold text-slate-800 mb-1">
-              {uploadMode === 'single' ? 'Select single PDF or DOCX file' : 'Select multiple PDF or DOCX files (Bulk Batch)'}
+          {/* File Dropzone */}
+          <div className="border border-dashed border-line-strong rounded-lg p-6 bg-white text-center hover:border-accent transition">
+            <div className="w-10 h-10 rounded-full bg-accent-light text-accent flex items-center justify-center mx-auto mb-2">
+              <FileUp className="w-5 h-5" />
+            </div>
+            <p className="text-xs font-semibold text-text-main mb-1">
+              {uploadMode === 'single' ? 'Select single PDF or DOCX file' : 'Select multiple PDF or DOCX files for batch ingestion'}
             </p>
-            <p className="text-xs text-slate-500 mb-3">Supported extensions: .pdf, .docx (Max 10MB per file)</p>
+            <p className="text-[11px] text-text-muted mb-3">Accepted formats: .pdf, .docx (Up to 10MB per file)</p>
             <input
               type="file"
               accept=".pdf,.docx"
               multiple={uploadMode === 'bulk'}
               onChange={handleFileChange}
-              className="text-xs text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+              className="text-xs text-text-muted file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border file:border-line file:text-xs file:font-semibold file:bg-app file:text-text-main hover:file:bg-white cursor-pointer"
             />
-            {files && (
-              <p className="text-xs font-semibold text-blue-700 mt-3">
-                Selected {files.length} file(s) ready for processing.
+            {files && files.length > 0 && (
+              <p className="text-xs font-semibold text-accent mt-3">
+                {files.length} {files.length === 1 ? 'file' : 'files'} selected and ready for extraction.
               </p>
             )}
           </div>
         </div>
 
+        {/* Update Existing Checkbox */}
+        <div className="flex items-center gap-2 px-1">
+          <input
+            id="recruiter-update-existing"
+            type="checkbox"
+            checked={updateExisting}
+            onChange={(e) => setUpdateExisting(e.target.checked)}
+            className="w-4 h-4 text-accent rounded border-line focus:ring-accent"
+          />
+          <label htmlFor="recruiter-update-existing" className="text-xs text-text-muted select-none cursor-pointer">
+            Update existing candidate profiles if a resume with the same normalized email address already exists
+          </label>
+        </div>
+
+        {/* Action Button */}
         <div className="flex justify-end">
           <button
             type="submit"
             disabled={uploading}
-            className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-md shadow-sm transition disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-accent hover:bg-accent-hover text-white text-xs font-semibold rounded-md shadow-xs transition disabled:opacity-50"
           >
-            <Upload className="w-4 h-4" />
-            <span>{uploading ? 'Processing Resumes...' : 'Run Extraction'}</span>
+            <Upload className="w-3.5 h-3.5" />
+            <span>{uploading ? 'Extracting & Ingesting...' : 'Run Information Extraction'}</span>
           </button>
         </div>
       </form>
 
       {/* SINGLE RESULT DISPLAY */}
       {singleResult && (
-        <div className="border border-blue-200 rounded-lg p-5 bg-blue-50/50 space-y-3">
-          <div className="flex items-center justify-between pb-3 border-b border-blue-100">
-            <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-              Extracted Profile (ID: #{singleResult.id})
+        <div className="border border-line rounded-lg p-5 bg-surface space-y-3">
+          <div className="flex items-center justify-between pb-3 border-b border-line">
+            <h3 className="font-bold text-text-main text-xs sm:text-sm flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-status-success" />
+              <span>Extracted Profile (Candidate #{singleResult.id})</span>
             </h3>
-            <span className="text-xs bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full font-semibold">
-              Status: Success
+            <span className="text-[11px] bg-status-success-bg text-status-success border border-status-success-border px-2 py-0.5 rounded font-medium">
+              Extraction Complete
             </span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-            <div><span className="font-semibold text-slate-500">Name:</span> <span className="text-slate-900 font-medium">{singleResult.name || 'N/A'}</span></div>
-            <div><span className="font-semibold text-slate-500">Email:</span> <span className="text-slate-900 font-medium">{singleResult.email || 'N/A'}</span></div>
-            <div><span className="font-semibold text-slate-500">Phone:</span> <span className="text-slate-900 font-medium">{singleResult.phone || 'N/A'}</span></div>
+            <div>
+              <span className="font-semibold text-text-muted block text-[11px]">Name:</span>
+              <span className="text-text-main font-medium">{singleResult.name || 'Unidentified'}</span>
+            </div>
+            <div>
+              <span className="font-semibold text-text-muted block text-[11px]">Email:</span>
+              <span className="text-text-main font-medium">{singleResult.email || 'N/A'}</span>
+            </div>
+            <div>
+              <span className="font-semibold text-text-muted block text-[11px]">Phone:</span>
+              <span className="text-text-main font-medium">{singleResult.phone || 'N/A'}</span>
+            </div>
           </div>
 
           {singleResult.skills && singleResult.skills.length > 0 && (
-            <div>
-              <span className="text-xs font-semibold text-slate-700 block mb-1">Extracted Technical Skills:</span>
-              <div className="flex flex-wrap gap-1.5">
+            <div className="pt-2 border-t border-line">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-text-muted block mb-1.5">
+                Extracted Technical Skills ({singleResult.skills.length}):
+              </span>
+              <div className="flex flex-wrap gap-1">
                 {singleResult.skills.map((skill, idx) => (
-                  <span key={idx} className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded border border-blue-200 text-xs font-medium">
+                  <span
+                    key={idx}
+                    className="px-2 py-0.5 bg-accent-light text-accent border border-accent-border rounded text-[11px] font-medium"
+                  >
                     {skill}
                   </span>
                 ))}
@@ -233,16 +272,16 @@ export const UploadResumes: React.FC = () => {
           )}
 
           {singleResult.education && (
-            <div>
-              <span className="text-xs font-semibold text-slate-700 block">Education:</span>
-              <p className="text-xs text-slate-600 line-clamp-2">{singleResult.education}</p>
+            <div className="pt-2 border-t border-line text-xs">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-text-muted block mb-0.5">Education:</span>
+              <p className="text-text-muted line-clamp-2 leading-relaxed">{singleResult.education}</p>
             </div>
           )}
 
           {singleResult.experience && (
-            <div>
-              <span className="text-xs font-semibold text-slate-700 block">Experience:</span>
-              <p className="text-xs text-slate-600 line-clamp-2">{singleResult.experience}</p>
+            <div className="pt-2 border-t border-line text-xs">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-text-muted block mb-0.5">Experience:</span>
+              <p className="text-text-muted line-clamp-2 leading-relaxed">{singleResult.experience}</p>
             </div>
           )}
         </div>
@@ -250,29 +289,29 @@ export const UploadResumes: React.FC = () => {
 
       {/* BULK RESULT DISPLAY */}
       {bulkResult && (
-        <div className="space-y-4">
+        <div className="space-y-4 pt-2">
           <div className="grid grid-cols-3 gap-3">
-            <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-center">
-              <span className="text-xs text-slate-500 font-semibold">Total Processed</span>
-              <p className="text-xl font-bold text-slate-900">{bulkResult.total_files}</p>
+            <div className="bg-app border border-line rounded-lg p-3 text-center">
+              <span className="text-[11px] text-text-muted font-medium">Total Files</span>
+              <p className="text-xl font-bold text-text-main mt-0.5">{bulkResult.total_files}</p>
             </div>
-            <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-center">
-              <span className="text-xs text-emerald-700 font-semibold">Successful</span>
-              <p className="text-xl font-bold text-emerald-800">{bulkResult.successful_files}</p>
+            <div className="bg-status-success-bg border border-status-success-border rounded-lg p-3 text-center">
+              <span className="text-[11px] text-status-success font-medium">Successful</span>
+              <p className="text-xl font-bold text-status-success mt-0.5">{bulkResult.successful_files}</p>
             </div>
-            <div className="bg-rose-50 border border-rose-200 rounded-lg p-3 text-center">
-              <span className="text-xs text-rose-700 font-semibold">Failed</span>
-              <p className="text-xl font-bold text-rose-800">{bulkResult.failed_files}</p>
+            <div className="bg-status-danger-bg border border-status-danger-border rounded-lg p-3 text-center">
+              <span className="text-[11px] text-status-danger font-medium">Failed</span>
+              <p className="text-xl font-bold text-status-danger mt-0.5">{bulkResult.failed_files}</p>
             </div>
           </div>
 
           {bulkResult.errors.length > 0 && (
-            <div className="bg-rose-50 border border-rose-200 rounded-lg p-4">
-              <h4 className="text-xs font-bold text-rose-900 mb-2">Failed Files Log:</h4>
-              <ul className="space-y-1 text-xs text-rose-800">
+            <div className="bg-status-danger-bg border border-status-danger-border rounded-lg p-4">
+              <h4 className="text-xs font-bold text-status-danger mb-2">Ingestion Exceptions:</h4>
+              <ul className="space-y-1.5 text-xs text-status-danger">
                 {bulkResult.errors.map((errItem, idx) => (
-                  <li key={idx} className="flex items-start gap-1">
-                    <AlertCircle className="w-3.5 h-3.5 text-rose-600 shrink-0 mt-0.5" />
+                  <li key={idx} className="flex items-start gap-1.5">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
                     <span><strong>{errItem.filename}:</strong> {errItem.error}</span>
                   </li>
                 ))}
@@ -282,22 +321,27 @@ export const UploadResumes: React.FC = () => {
 
           {bulkResult.candidates.length > 0 && (
             <div className="space-y-3">
-              <h4 className="text-xs font-bold text-slate-900">Successfully Ingested Candidates ({bulkResult.candidates.length}):</h4>
+              <h4 className="text-xs font-bold text-text-main">
+                Successfully Ingested Candidates ({bulkResult.candidates.length}):
+              </h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {bulkResult.candidates.map((cand) => (
-                  <div key={cand.id} className="border border-slate-200 rounded-lg p-3 bg-white space-y-2 text-xs">
+                  <div key={cand.id} className="border border-line rounded-lg p-3 bg-white space-y-2 text-xs">
                     <div className="flex justify-between items-start">
-                      <span className="font-bold text-slate-900">{cand.name || 'Unnamed Candidate'}</span>
-                      <span className="text-slate-400 text-[10px]">ID #{cand.id}</span>
+                      <span className="font-bold text-text-main">{cand.name || 'Unidentified Profile'}</span>
+                      <span className="text-text-muted text-[10px] font-mono">ID #{cand.id}</span>
                     </div>
-                    <div className="text-slate-600">
+                    <div className="text-text-muted text-[11px]">
                       <div>{cand.email || 'No email extracted'}</div>
                       <div>{cand.phone || 'No phone extracted'}</div>
                     </div>
-                    {cand.skills.length > 0 && (
+                    {cand.skills && cand.skills.length > 0 && (
                       <div className="flex flex-wrap gap-1 pt-1">
                         {cand.skills.map((s, i) => (
-                          <span key={i} className="px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded text-[10px]">
+                          <span
+                            key={i}
+                            className="px-1.5 py-0.5 bg-app text-text-main border border-line rounded text-[10px]"
+                          >
                             {s}
                           </span>
                         ))}
